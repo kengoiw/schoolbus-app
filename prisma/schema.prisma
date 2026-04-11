@@ -1,0 +1,371 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+  binaryTargets = ["native", "windows"]
+}
+
+datasource db {
+  provider = "postgresql"
+  // url は prisma.config.ts で管理 (Prisma v7+)
+}
+
+// =====================
+// ユーザー
+// =====================
+model User {
+  id           String   @id @default(uuid())
+  role         Role     @default(guardian)
+  name         String
+  phone        String?
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  status       UserStatus @default(active)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  guardianChildren     GuardianChild[]
+  submittedContacts    DailyContact[]  @relation("SubmittedBy")
+  receivedContacts     DailyContact[]  @relation("ReceivedBy")
+  driverTrips          Trip[]          @relation("DriverTrips")
+  checkedPassengers    TripPassenger[] @relation("CheckedBy")
+  createdAnnouncements Announcement[]
+  auditLogs            AuditLog[]
+
+  @@map("users")
+}
+
+enum Role {
+  guardian
+  admin
+  driver
+}
+
+enum UserStatus {
+  active
+  inactive
+}
+
+// =====================
+// 学校
+// =====================
+model School {
+  id   String @id @default(uuid())
+  name String
+
+  // Relations
+  children      Child[]
+  routes        Route[]
+  operationDays OperationDay[]
+  announcements Announcement[]
+
+  @@map("schools")
+}
+
+// =====================
+// 児童
+// =====================
+model Child {
+  id        String      @id @default(uuid())
+  schoolId  String      @map("school_id")
+  name      String
+  kana      String
+  grade     Int
+  className String      @map("class_name")
+  status    ChildStatus @default(active)
+
+  // 標準利用設定
+  defaultMorningUse     Boolean @default(false) @map("default_morning_use")
+  defaultEveningUse     Boolean @default(false) @map("default_evening_use")
+  defaultMorningRouteId String? @map("default_morning_route_id")
+  defaultMorningStopId  String? @map("default_morning_stop_id")
+  defaultEveningRouteId String? @map("default_evening_route_id")
+  defaultEveningStopId  String? @map("default_evening_stop_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  school               School          @relation(fields: [schoolId], references: [id])
+  defaultMorningRoute  Route?          @relation("DefaultMorningRoute", fields: [defaultMorningRouteId], references: [id])
+  defaultMorningStop   Stop?           @relation("DefaultMorningStop", fields: [defaultMorningStopId], references: [id])
+  defaultEveningRoute  Route?          @relation("DefaultEveningRoute", fields: [defaultEveningRouteId], references: [id])
+  defaultEveningStop   Stop?           @relation("DefaultEveningStop", fields: [defaultEveningStopId], references: [id])
+  guardianChildren     GuardianChild[]
+  dailyContacts        DailyContact[]
+  tripPassengers       TripPassenger[]
+
+  @@map("children")
+}
+
+enum ChildStatus {
+  active
+  inactive
+}
+
+// =====================
+// 保護者-児童 関連
+// =====================
+model GuardianChild {
+  id              String @id @default(uuid())
+  guardianUserId  String @map("guardian_user_id")
+  childId         String @map("child_id")
+  relationship    String @default("保護者")
+
+  guardian User  @relation(fields: [guardianUserId], references: [id])
+  child    Child @relation(fields: [childId], references: [id])
+
+  @@unique([guardianUserId, childId])
+  @@map("guardian_children")
+}
+
+// =====================
+// 路線
+// =====================
+model Route {
+  id       String      @id @default(uuid())
+  schoolId String      @map("school_id")
+  name     String
+  status   RouteStatus @default(active)
+
+  school       School       @relation(fields: [schoolId], references: [id])
+  routeStops   RouteStop[]
+  trips        Trip[]
+  defaultMorningChildren Child[] @relation("DefaultMorningRoute")
+  defaultEveningChildren Child[] @relation("DefaultEveningRoute")
+  announcements          Announcement[]
+
+  @@map("routes")
+}
+
+enum RouteStatus {
+  active
+  inactive
+}
+
+// =====================
+// 停留所
+// =====================
+model Stop {
+  id   String  @id @default(uuid())
+  name String
+  lat  Decimal? @db.Decimal(9, 6)
+  lng  Decimal? @db.Decimal(9, 6)
+  memo String?
+
+  routeStops            RouteStop[]
+  tripPassengers        TripPassenger[]
+  defaultMorningChildren Child[] @relation("DefaultMorningStop")
+  defaultEveningChildren Child[] @relation("DefaultEveningStop")
+
+  @@map("stops")
+}
+
+// =====================
+// 路線-停留所 関連
+// =====================
+model RouteStop {
+  id          String   @id @default(uuid())
+  routeId     String   @map("route_id")
+  stopId      String   @map("stop_id")
+  stopOrder   Int      @map("stop_order")
+  plannedTime String?  @map("planned_time") // HH:mm 形式
+
+  route Route @relation(fields: [routeId], references: [id])
+  stop  Stop  @relation(fields: [stopId], references: [id])
+
+  @@unique([routeId, stopId])
+  @@map("route_stops")
+}
+
+// =====================
+// 運行日
+// =====================
+model OperationDay {
+  id              String           @id @default(uuid())
+  schoolId        String           @map("school_id")
+  operationDate   DateTime         @map("operation_date") @db.Date
+  status          OperationStatus  @default(normal)
+  morningDeadlineAt DateTime?      @map("morning_deadline_at")
+  eveningDeadlineAt DateTime?      @map("evening_deadline_at")
+  note            String?
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  school        School         @relation(fields: [schoolId], references: [id])
+  dailyContacts DailyContact[]
+  trips         Trip[]
+
+  @@unique([schoolId, operationDate])
+  @@map("operation_days")
+}
+
+enum OperationStatus {
+  normal
+  holiday
+  canceled
+  early_close
+}
+
+// =====================
+// 日次連絡
+// =====================
+model DailyContact {
+  id              String           @id @default(uuid())
+  childId         String           @map("child_id")
+  operationDayId  String           @map("operation_day_id")
+  attendanceStatus AttendanceStatus @map("attendance_status") @default(attend)
+  morningUseType  UseType          @map("morning_use_type") @default(default)
+  eveningUseType  UseType          @map("evening_use_type") @default(default)
+  note            String?
+  source          ContactSource    @default(app)
+  submittedByUserId String         @map("submitted_by_user_id")
+  receivedByUserId  String?        @map("received_by_user_id")
+  submittedAt       DateTime       @map("submitted_at") @default(now())
+  afterDeadlineFlag Boolean        @map("after_deadline_flag") @default(false)
+  version           Int            @default(1)
+  isActive          Boolean        @map("is_active") @default(true)
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+
+  child        Child        @relation(fields: [childId], references: [id])
+  operationDay OperationDay @relation(fields: [operationDayId], references: [id])
+  submittedBy  User         @relation("SubmittedBy", fields: [submittedByUserId], references: [id])
+  receivedBy   User?        @relation("ReceivedBy", fields: [receivedByUserId], references: [id])
+
+  @@unique([childId, operationDayId])
+  @@map("daily_contacts")
+}
+
+enum AttendanceStatus {
+  attend
+  absent
+}
+
+enum UseType {
+  default
+  use
+  not_use
+}
+
+enum ContactSource {
+  app
+  phone
+  admin
+}
+
+// =====================
+// 便（トリップ）
+// =====================
+model Trip {
+  id             String     @id @default(uuid())
+  operationDayId String     @map("operation_day_id")
+  routeId        String     @map("route_id")
+  segment        Segment
+  driverUserId   String?    @map("driver_user_id")
+  status         TripStatus @default(planned)
+  adminNote      String?    @map("admin_note")
+  startedAt      DateTime?  @map("started_at")
+  completedAt    DateTime?  @map("completed_at")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  operationDay OperationDay   @relation(fields: [operationDayId], references: [id])
+  route        Route          @relation(fields: [routeId], references: [id])
+  driver       User?          @relation("DriverTrips", fields: [driverUserId], references: [id])
+  passengers   TripPassenger[]
+
+  @@map("trips")
+}
+
+enum Segment {
+  morning
+  evening
+}
+
+enum TripStatus {
+  planned
+  confirmed
+  in_service
+  completed
+  canceled
+}
+
+// =====================
+// 乗車予定（乗客）
+// =====================
+model TripPassenger {
+  id              String          @id @default(uuid())
+  tripId          String          @map("trip_id")
+  childId         String          @map("child_id")
+  stopId          String          @map("stop_id")
+  expectedBoarding Boolean        @map("expected_boarding") @default(true)
+  boardingStatus  BoardingStatus  @map("boarding_status") @default(expected)
+  checkedAt       DateTime?       @map("checked_at")
+  checkedByUserId String?         @map("checked_by_user_id")
+
+  trip        Trip  @relation(fields: [tripId], references: [id])
+  child       Child @relation(fields: [childId], references: [id])
+  stop        Stop  @relation(fields: [stopId], references: [id])
+  checkedBy   User? @relation("CheckedBy", fields: [checkedByUserId], references: [id])
+
+  @@unique([tripId, childId])
+  @@map("trip_passengers")
+}
+
+enum BoardingStatus {
+  expected
+  boarded
+  no_show
+  excused
+}
+
+// =====================
+// お知らせ
+// =====================
+model Announcement {
+  id              String      @id @default(uuid())
+  title           String
+  body            String
+  targetRole      TargetRole  @map("target_role") @default(all)
+  targetSchoolId  String?     @map("target_school_id")
+  targetRouteId   String?     @map("target_route_id")
+  publishFrom     DateTime    @map("publish_from")
+  publishTo       DateTime?   @map("publish_to")
+  createdByUserId String      @map("created_by_user_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  createdBy    User    @relation(fields: [createdByUserId], references: [id])
+  targetSchool School? @relation(fields: [targetSchoolId], references: [id])
+  targetRoute  Route?  @relation(fields: [targetRouteId], references: [id])
+
+  @@map("announcements")
+}
+
+enum TargetRole {
+  all
+  guardian
+  driver
+}
+
+// =====================
+// 監査ログ
+// =====================
+model AuditLog {
+  id            String   @id @default(uuid())
+  entityType    String   @map("entity_type")
+  entityId      String   @map("entity_id")
+  action        String
+  beforeJson    Json?    @map("before_json")
+  afterJson     Json?    @map("after_json")
+  actedByUserId String   @map("acted_by_user_id")
+  actedAt       DateTime @default(now()) @map("acted_at")
+
+  actedBy User @relation(fields: [actedByUserId], references: [id])
+
+  @@map("audit_logs")
+}
