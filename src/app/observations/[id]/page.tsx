@@ -130,7 +130,6 @@ export default function ObservationPointDetailPage() {
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          capture="environment"
           onChange={handleFileChange}
           className="form-input"
         />
