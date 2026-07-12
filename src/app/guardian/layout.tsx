@@ -54,6 +54,10 @@ export default async function GuardianLayout({
             </svg>
             <span className="text-xs">お知らせ</span>
           </Link>
+          <Link href="/observations" className="nav-item">
+            <span className="w-5 h-5 flex items-center justify-center text-base leading-none">🌱</span>
+            <span className="text-xs">定点観測</span>
+          </Link>
         </div>
       </nav>
     </div>
