@@ -34,6 +34,8 @@ model User {
   checkedPassengers    TripPassenger[] @relation("CheckedBy")
   createdAnnouncements Announcement[]
   auditLogs            AuditLog[]
+  observationPoints    ObservationPoint[]
+  cropObservations     CropObservation[]
 
   @@map("users")
 }
@@ -350,6 +352,48 @@ enum TargetRole {
   all
   guardian
   driver
+}
+
+// =====================
+// 定点観測地点（圃場）
+// =====================
+model ObservationPoint {
+  id              String   @id @default(uuid())
+  name            String
+  memo            String?
+  createdByUserId String   @map("created_by_user_id")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  createdBy    User               @relation(fields: [createdByUserId], references: [id])
+  observations CropObservation[]
+
+  @@map("observation_points")
+}
+
+// =====================
+// 定点観測記録（写真+解析結果）
+// =====================
+model CropObservation {
+  id                 String   @id @default(uuid())
+  observationPointId String   @map("observation_point_id")
+  userId             String   @map("user_id")
+  imageData          Bytes    @map("image_data")
+  imageMimeType      String   @map("image_mime_type")
+  note               String?
+  greenRatio         Float    @map("green_ratio")
+  yellowBrownRatio   Float    @map("yellow_brown_ratio")
+  otherRatio         Float    @map("other_ratio")
+  avgBrightness      Float    @map("avg_brightness")
+  takenAt            DateTime @map("taken_at")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  observationPoint ObservationPoint @relation(fields: [observationPointId], references: [id])
+  user             User             @relation(fields: [userId], references: [id])
+
+  @@index([observationPointId, takenAt])
+  @@map("crop_observations")
 }
 
 // =====================
