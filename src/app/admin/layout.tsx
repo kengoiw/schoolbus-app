@@ -48,6 +48,13 @@ export default async function AdminLayout({
             <span className="w-4 h-4 flex items-center justify-center text-sm leading-none">🌱</span>
             定点観測
           </Link>
+          <Link
+            href="/obira-chan"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+          >
+            <span className="w-4 h-4 flex items-center justify-center text-sm leading-none">🐟</span>
+            おびらちゃん
+          </Link>
         </nav>
         <div className="p-3 border-t border-gray-100">
           <p className="text-xs text-gray-500">{session.user?.name}</p>
