@@ -7,10 +7,10 @@ describe("localReply", () => {
     expect(reply).toContain("おびらちゃん");
   });
 
-  it("バスの質問には締切・電話の案内を含む", () => {
+  it("バスの質問にはアプリ準備中の案内を返す", () => {
     const reply = localReply("バスを欠席したいときはどうすればいい？");
-    expect(reply).toMatch(/締切/);
-    expect(reply).toMatch(/電話/);
+    expect(reply).toMatch(/準備中/);
+    expect(reply).toMatch(/学校/);
   });
 
   it("ニシンの話題に食いつく", () => {
@@ -48,8 +48,7 @@ describe("キャラクター設定", () => {
     expect(OBIRA_CHAN_SYSTEM_PROMPT).toContain("非公式");
   });
 
-  it("システムプロンプトがバス連絡の締切ルールを含む", () => {
-    expect(OBIRA_CHAN_SYSTEM_PROMPT).toContain("締切");
-    expect(OBIRA_CHAN_SYSTEM_PROMPT).toContain("電話");
+  it("システムプロンプトがバスアプリ準備中であることを含む", () => {
+    expect(OBIRA_CHAN_SYSTEM_PROMPT).toContain("準備中");
   });
 });

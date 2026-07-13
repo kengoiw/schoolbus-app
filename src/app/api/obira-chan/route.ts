@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
-import { requireAuth } from "@/lib/auth-guard";
 import {
   OBIRA_CHAN_SYSTEM_PROMPT,
   localReply,
@@ -23,9 +22,35 @@ const bodySchema = z.object({
 // 直近のやりとりだけ送ってトークンを節約する
 const HISTORY_LIMIT = 12;
 
+// 公開APIのため、IPごとの簡易レート制限（サーバレスではインスタンス単位のベストエフォート）
+const RATE_LIMIT = 10; // 回 / 窓
+const RATE_WINDOW_MS = 60_000;
+const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const bucket = rateBuckets.get(ip);
+  if (!bucket || bucket.resetAt <= now) {
+    rateBuckets.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return false;
+  }
+  bucket.count += 1;
+  return bucket.count > RATE_LIMIT;
+}
+
 export async function POST(req: NextRequest) {
-  const { error } = await requireAuth();
-  if (error) return error;
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (isRateLimited(ip)) {
+    return NextResponse.json(
+      {
+        reply:
+          "ちょ、ちょっと待って！話しかけられすぎてヒレが追いつかないよ🐟 1分くらい休ませてね。",
+        source: "local",
+      },
+      { status: 429 }
+    );
+  }
 
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {

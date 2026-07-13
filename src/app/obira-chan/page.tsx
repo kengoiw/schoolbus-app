@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { BOT_GREETING, BOT_NAME, BOT_TAGLINE, type ChatMessage } from "@/lib/obira-chan";
 
 const SUGGESTIONS = [
-  "バスを休むときはどうするの？",
   "小平町のおすすめ教えて！",
   "ニシンって何？",
+  "おいしいものある？",
   "おびらちゃんって公式なの？",
 ];
 

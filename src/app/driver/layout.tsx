@@ -43,10 +43,6 @@ export default async function DriverLayout({
             <span className="w-5 h-5 flex items-center justify-center text-base leading-none">🌱</span>
             <span className="text-xs">定点観測</span>
           </Link>
-          <Link href="/obira-chan" className="nav-item">
-            <span className="w-5 h-5 flex items-center justify-center text-base leading-none">🐟</span>
-            <span className="text-xs">おびらちゃん</span>
-          </Link>
         </div>
       </nav>
     </div>

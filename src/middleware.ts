@@ -7,8 +7,8 @@ const { auth } = NextAuth(authConfig);
 export default auth((req) => {
   const { pathname } = req.nextUrl;
 
-  // 認証不要なパス
-  const publicPaths = ["/login", "/api/auth"];
+  // 認証不要なパス（おびらちゃんはスタンドアロン公開ページ）
+  const publicPaths = ["/login", "/api/auth", "/obira-chan", "/api/obira-chan"];
   if (publicPaths.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
