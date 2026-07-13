@@ -33,6 +33,17 @@ describe("localReply", () => {
     expect(reply.length).toBeGreaterThan(0);
   });
 
+  it("人口を聞かれたら数字と更新日の注意書きを返す", () => {
+    const reply = localReply("小平町の人口教えて", () => 0);
+    expect(reply).toMatch(/2,559人|2559人/);
+    expect(reply).toMatch(/公式サイト/);
+  });
+
+  it("ホームページを聞かれたら公式URLを返す（非公式ルールより優先）", () => {
+    const reply = localReply("公式ホームページのアドレス教えて", () => 0);
+    expect(reply).toContain("https://www.town.obira.hokkaido.jp/");
+  });
+
   it("乱数を注入すると応答が決定的になる", () => {
     const first = localReply("こんにちは", () => 0);
     const again = localReply("こんにちは", () => 0);
