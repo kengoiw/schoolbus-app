@@ -9,7 +9,7 @@ Vercelのプロジェクト設定画面（Settings > Environment Variables）に
 | 変数名 | 説明 | サンプル / 推奨値 |
 |:---|:---|:---|
 | `DATABASE_URL` | PostgreSQLへの接続URL (コネクションプーリング対応のものを推奨) | `postgresql://user:password@host:port/mydb?pgbouncer=true` |
-| `DIRECT_URL` | PostgreSQLへの直接接続URL (Prismaマイグレーション用・設定がある場合のみ) | `postgresql://user:password@host:port/mydb` |
+| `DIRECT_URL` | PostgreSQLへの直接接続URL (`prisma.config.ts` がマイグレーション実行時に優先使用。`DATABASE_URL` にpgbouncer等のコネクションプーラー経由URLを使う場合は必須。アプリ実行時の接続には使われない) | `postgresql://user:password@host:port/mydb` |
 | `AUTH_SECRET` | セッション暗号化用のランダム文字列 (NextAuth用) | `openssl rand -base64 32` の実行結果 |
 | `TZ` | タイムゾーン設定 (JST固定のため必須) | `Asia/Tokyo` |
 

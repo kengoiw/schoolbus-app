@@ -10,6 +10,11 @@ export default defineConfig({
     seed: "npx tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // CLI（migrate/studio等）はDIRECT_URLがあればそちらを使う。
+    // pgbouncer等のコネクションプーラー経由URLをDATABASE_URLに使う場合、
+    // マイグレーションはプーラーのプロトコル制限で失敗するため。
+    // アプリ実行時の接続は src/lib/prisma.ts が DATABASE_URL を直接参照する
+    // （このファイルの datasource.url は使われない）。
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"],
   },
 });
