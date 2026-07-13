@@ -21,7 +21,7 @@ export default async function ObservationsLayout({
     <div className="min-h-screen flex flex-col bg-gray-50">
       <header className="bg-green-700 text-white shadow-sm sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="/observations" className="text-base font-bold">
+          <Link href="/observations" className="text-base font-bold text-white">
             🌱 作物定点観測
           </Link>
           <Link href={roleHome[role] ?? "/"} className="text-xs text-green-100 underline">
