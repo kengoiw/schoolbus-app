@@ -7,8 +7,15 @@ const { auth } = NextAuth(authConfig);
 export default auth((req) => {
   const { pathname } = req.nextUrl;
 
-  // 認証不要なパス（おびらちゃんはスタンドアロン公開ページ）
-  const publicPaths = ["/login", "/api/auth", "/obira-chan", "/api/obira-chan"];
+  // 認証不要なパス（おびらちゃん・岩倉農場AI案内所はスタンドアロン公開ページ）
+  const publicPaths = [
+    "/login",
+    "/api/auth",
+    "/obira-chan",
+    "/api/obira-chan",
+    "/iwakura-farm",
+    "/api/iwakura-farm",
+  ];
   if (publicPaths.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
