@@ -44,6 +44,12 @@ describe("localReply", () => {
     expect(reply).toContain("https://www.town.obira.hokkaido.jp/");
   });
 
+  it("農業の質問にはメロンと和牛の話を返す", () => {
+    const reply = localReply("小平町の農業について教えて", () => 0);
+    expect(reply).toMatch(/メロン/);
+    expect(reply).toMatch(/和牛|小平牛/);
+  });
+
   it("乱数を注入すると応答が決定的になる", () => {
     const first = localReply("こんにちは", () => 0);
     const again = localReply("こんにちは", () => 0);
@@ -61,5 +67,10 @@ describe("キャラクター設定", () => {
 
   it("システムプロンプトがバスアプリ準備中であることを含む", () => {
     expect(OBIRA_CHAN_SYSTEM_PROMPT).toContain("準備中");
+  });
+
+  it("システムプロンプトが農業知識とWeb検索の使い方を含む", () => {
+    expect(OBIRA_CHAN_SYSTEM_PROMPT).toContain("アイボリーメロン");
+    expect(OBIRA_CHAN_SYSTEM_PROMPT).toContain("web_search");
   });
 });

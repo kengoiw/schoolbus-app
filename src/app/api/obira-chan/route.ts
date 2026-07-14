@@ -72,6 +72,9 @@ export async function POST(req: NextRequest) {
         max_tokens: 1024,
         system: OBIRA_CHAN_SYSTEM_PROMPT,
         messages,
+        tools: [
+          { type: "web_search_20260209", name: "web_search", max_uses: 3 },
+        ],
       });
 
       const reply = response.content
